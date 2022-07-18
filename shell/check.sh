@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-dir_shell=/ql/shell
+dir_shell=$QL_DIR/shell
 . $dir_shell/share.sh
 . $dir_shell/api.sh
 
@@ -10,13 +10,11 @@ reset_env() {
   echo -e "---> 配置文件检测完成\n"
 
   echo -e "---> 2. 开始安装青龙依赖\n"
-  rm -rf $dir_root/node_modules
   npm_install_2 $dir_root
   echo -e "---> 青龙依赖安装完成\n"
 
   echo -e "---> 3. 开始安装脚本依赖\n"
   cp -f $dir_sample/package.json $dir_scripts/package.json
-  rm -rf $dir_scripts/node_modules
   npm_install_2 $dir_scripts
   echo -e "---> 脚本依赖安装完成\n"
 }
@@ -36,22 +34,12 @@ copy_dep() {
   echo -e "---> 配置文件复制完成\n"
 }
 
-reload_pm2() {
-  pm2 l &>/dev/null
-
-  pm2 delete panel --source-map-support --time &>/dev/null
-  pm2 start $dir_root/build/app.js -n panel --source-map-support --time &>/dev/null
-
-  pm2 delete schedule --source-map-support --time &>/dev/null
-  pm2 start $dir_root/build/schedule.js -n schedule --source-map-support --time &>/dev/null
-}
-
 pm2_log() {
   echo -e "---> pm2日志"
   local panelOut="/root/.pm2/logs/panel-out.log"
   local panelError="/root/.pm2/logs/panel-error.log"
-  tail -n 20 "$panelOut"
-  tail -n 20 "$panelError"
+  tail -n 100 "$panelOut"
+  tail -n 100 "$panelError"
 }
 
 check_nginx() {
@@ -100,6 +88,8 @@ check_pm2() {
 
 main() {
   echo -e "=====> 开始检测"
+  npm i -g pnpm
+  pnpm add -g pm2
   copy_dep
   check_ql
   check_nginx

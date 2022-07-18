@@ -8,7 +8,7 @@
 
 <div align="center">
 
-支持python3、javaScript、shell、typescript 的定时任务管理面板（A timed task management panel that supports typescript, javaScript, python3, and shell.）
+支持python3、javaScript、shell、typescript 的定时任务管理面板
 
 [![docker version][docker-version-image]][docker-version-url] [![docker pulls][docker-pulls-image]][docker-pulls-url] [![docker stars][docker-stars-image]][docker-stars-url] [![docker image size][docker-image-size-image]][docker-image-size-url]
 
@@ -22,7 +22,7 @@
 [docker-image-size-url]: https://hub.docker.com/r/whyour/qinglong
 </div>
 
-[![](https://z3.ax1x.com/2021/11/18/I7KrTg.jpg)](https://whyour.cn)
+[![](https://user-images.githubusercontent.com/22700758/161788855-c4e51cb8-d4e9-44fe-bb17-ee1a56c8549b.png)](https://whyour.cn)
 
 简体中文 | [English](./README-en.md)
 
@@ -44,6 +44,27 @@
 # 待完善
 ```
 
+### podman 部署
+
+1. podman 安装
+
+```bash
+https://podman.io/getting-started/installation
+```
+
+2. 启动容器
+
+```bash
+podman run -dit \
+  --network bridge \
+  -v $PWD/ql:/ql/data \
+  -p 5700:5700 \
+  --name qinglong \
+  --hostname qinglong \
+  --restart unless-stopped \
+  docker.io/whyour/qinglong:latest
+```
+
 ### docker 部署
 
 1. docker 安装
@@ -52,16 +73,31 @@
 sudo curl -sSL get.docker.com | sh
 ```
 
-2. 启动容器
+2. 配置国内镜像源
+Configure domestic mirror sources
+
+```bash
+mkdir -p /etc/docker
+tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://0b27f0a81a00f3560fbdc00ddd2f99e0.mirror.swr.myhuaweicloud.com",
+    "https://ypzju6vq.mirror.aliyuncs.com",
+    "https://registry.docker-cn.com",
+    "http://hub-mirror.c.163.com",
+    "https://docker.mirrors.ustc.edu.cn"
+  ]
+}
+EOF
+systemctl daemon-reload
+systemctl restart docker
+```
+
+3. 启动容器
 
 ```bash
 docker run -dit \
-  -v $PWD/ql/config:/ql/config \
-  -v $PWD/ql/log:/ql/log \
-  -v $PWD/ql/db:/ql/db \
-  -v $PWD/ql/repo:/ql/repo \
-  -v $PWD/ql/raw:/ql/raw \
-  -v $PWD/ql/scripts:/ql/scripts \
+  -v $PWD/ql:/ql/data \
   -p 5700:5700 \
   --name qinglong \
   --hostname qinglong \
@@ -81,7 +117,7 @@ sudo curl -L https://github.com/docker/compose/releases/download/1.16.1/docker-c
 
 ```bash
 mkdir qinglong
-wget https://raw.githubusercontent.com/whyour/qinglong/master/docker-compose.yml
+wget https://raw.githubusercontent.com/whyour/qinglong/master/docker/docker-compose.yml
 
 # 启动
 docker-compose up -d
@@ -101,7 +137,7 @@ ql extra
 # 添加单个脚本文件
 ql raw <file_url>                                             
 # 添加单个仓库的指定脚本
-ql repo <repo_url> <whitelist> <blacklist> <dependence> <branch>   
+ql repo <repo_url> <whitelist> <blacklist> <dependence> <branch> <extensions>
 # 删除旧日志
 ql rmlog <days>                                              
 # 启动tg-bot
@@ -131,6 +167,7 @@ task <file_path> desi <env_name> <account_number>
 * blacklist: 拉取仓库时的黑名单，即就是需要拉取的脚本的路径不包含的字符串
 * dependence: 拉取仓库需要的依赖文件，会直接从仓库拷贝到scripts下的仓库目录，不受黑名单影响
 * branch: 拉取仓库的分支
+* extensions: 拉取仓库的文件后缀
 * days: 需要保留的日志的天数
 * file_path: 任务执行时的文件路径
 * env_name: 任务执行时需要并发或者指定时的环境变量名称
@@ -152,12 +189,13 @@ task <file_path> desi <env_name> <account_number>
 $ git clone git@github.com:whyour/qinglong.git
 $ cd qinglong
 $ cp .env.example .env
-$ yarn install
-$ yarn start-back
-$ yarn start
+# 推荐使用 pnpm https://pnpm.io/zh/installation
+$ npm install -g pnpm
+$ pnpm install
+$ pnpm start
 ```
 
-打开你的浏览器，访问 http://127.0.0.1:5601
+打开你的浏览器，访问 http://127.0.0.1:5700
 
 ## 交流
 

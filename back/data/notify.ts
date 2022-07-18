@@ -2,6 +2,7 @@ export enum NotificationMode {
   'gotify' = 'gotify',
   'goCqHttpBot' = 'goCqHttpBot',
   'serverChan' = 'serverChan',
+  'pushDeer' = 'pushDeer',
   'bark' = 'bark',
   'telegramBot' = 'telegramBot',
   'dingtalkBot' = 'dingtalkBot',
@@ -32,8 +33,13 @@ export class ServerChanNotification extends NotificationBaseInfo {
   public serverChanKey = '';
 }
 
+export class PushDeerNotification extends NotificationBaseInfo {
+  public pushDeerKey = '';
+}
+
 export class BarkNotification extends NotificationBaseInfo {
   public barkPush = '';
+  public barkIcon = 'http://qn.whyour.cn/logo.png';
   public barkSound = '';
   public barkGroup = 'qinglong';
 }
@@ -79,6 +85,7 @@ export interface NotificationInfo
   extends GoCqHttpBotNotification,
     GotifyNotification,
     ServerChanNotification,
+    PushDeerNotification,
     BarkNotification,
     TelegramBotNotification,
     DingtalkBotNotification,

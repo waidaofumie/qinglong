@@ -1,17 +1,24 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import dotenv from 'dotenv';
 import Logger from './logger';
 import { fileExist } from '../config/util';
 
-const rootPath = process.cwd();
-const confFile = path.join(rootPath, 'config/config.sh');
-const sampleConfigFile = path.join(rootPath, 'sample/config.sample.sh');
-const sampleAuthFile = path.join(rootPath, 'sample/auth.sample.json');
-const authConfigFile = path.join(rootPath, 'config/auth.json');
-const configPath = path.join(rootPath, 'config/');
-const scriptPath = path.join(rootPath, 'scripts/');
-const logPath = path.join(rootPath, 'log/');
+const rootPath = process.env.QL_DIR as string;;
+const dataPath = path.join(rootPath, 'data/');
+const configPath = path.join(dataPath, 'config/');
+const scriptPath = path.join(dataPath, 'scripts/');
+const logPath = path.join(dataPath, 'log/');
+const uploadPath = path.join(dataPath, 'upload/');
+const bakPath = path.join(dataPath, 'bak/');
+const samplePath = path.join(rootPath, 'sample/');
+const confFile = path.join(configPath, 'config.sh');
+const authConfigFile = path.join(configPath, 'auth.json');
+const sampleConfigFile = path.join(samplePath, 'config.sample.sh');
+const sampleAuthFile = path.join(samplePath, 'auth.sample.json');
+const homedir = os.homedir();
+const sshPath = path.resolve(homedir, '.ssh');
 
 export default async () => {
   const authFileExist = await fileExist(authConfigFile);
@@ -19,6 +26,9 @@ export default async () => {
   const scriptDirExist = await fileExist(scriptPath);
   const logDirExist = await fileExist(logPath);
   const configDirExist = await fileExist(configPath);
+  const uploadDirExist = await fileExist(uploadPath);
+  const sshDirExist = await fileExist(sshPath);
+  const bakDirExist = await fileExist(bakPath);
 
   if (!configDirExist) {
     fs.mkdirSync(configPath);
@@ -38,6 +48,18 @@ export default async () => {
 
   if (!logDirExist) {
     fs.mkdirSync(logPath);
+  }
+
+  if (!uploadDirExist) {
+    fs.mkdirSync(uploadPath);
+  }
+
+  if (!sshDirExist) {
+    fs.mkdirSync(sshPath);
+  }
+
+  if (!bakDirExist) {
+    fs.mkdirSync(bakPath);
   }
 
   dotenv.config({ path: confFile });

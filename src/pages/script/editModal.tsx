@@ -47,6 +47,7 @@ const EditModal = ({
   const [log, setLog] = useState<string>('');
   const { theme } = useTheme();
   const editorRef = useRef<any>(null);
+  const [isRunning, setIsRunning] = useState(false);
 
   const cancel = () => {
     handleCancel();
@@ -65,7 +66,7 @@ const EditModal = ({
 
   const getDetail = (node: any) => {
     request
-      .get(`${config.apiPrefix}scripts/${node.value}?path=${node.parent || ''}`)
+      .get(`${config.apiPrefix}scripts/${node.title}?path=${node.parent || ''}`)
       .then((data) => {
         setValue(data.data);
       });
@@ -73,14 +74,36 @@ const EditModal = ({
 
   const run = () => {
     setLog('');
+    const content = editorRef.current.getValue().replace(/\r\n/g, '\n');
     request
       .put(`${config.apiPrefix}scripts/run`, {
         data: {
-          filename: cNode.value,
+          filename: cNode.title,
           path: cNode.parent || '',
+          content,
         },
       })
-      .then((data) => {});
+      .then((data) => {
+        setIsRunning(true);
+      });
+  };
+
+  const stop = () => {
+    if (!cNode || !cNode.title) {
+      return;
+    }
+    const content = editorRef.current.getValue().replace(/\r\n/g, '\n');
+    request
+      .put(`${config.apiPrefix}scripts/stop`, {
+        data: {
+          filename: cNode.title,
+          path: cNode.parent || '',
+          content,
+        },
+      })
+      .then((data) => {
+        setIsRunning(false);
+      });
   };
 
   useEffect(() => {
@@ -92,6 +115,12 @@ const EditModal = ({
 
     if (type !== 'manuallyRunScript') {
       return;
+    }
+
+    if (_message.includes('执行结束')) {
+      setTimeout(() => {
+        setIsRunning(false);
+      }, 300);
     }
 
     if (log) {
@@ -120,6 +149,7 @@ const EditModal = ({
             dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
             treeData={treeData}
             placeholder="请选择脚本文件"
+            fieldNames={{ value: 'key', label: 'title' }}
             showSearch
             onSelect={onSelect}
           />
@@ -135,8 +165,12 @@ const EditModal = ({
             <Option value="shell">shell</Option>
             <Option value="python">python</Option>
           </Select>
-          <Button type="primary" style={{ marginRight: 8 }} onClick={run}>
-            运行
+          <Button
+            type="primary"
+            style={{ marginRight: 8 }}
+            onClick={isRunning ? stop : run}
+          >
+            {isRunning ? '停止' : '运行'}
           </Button>
           <Button
             type="primary"
@@ -169,6 +203,7 @@ const EditModal = ({
             type="primary"
             style={{ marginRight: 8 }}
             onClick={() => {
+              stop();
               handleCancel();
             }}
           >
@@ -181,7 +216,12 @@ const EditModal = ({
       onClose={cancel}
       visible={visible}
     >
-      <SplitPane split="vertical" minSize={200} defaultSize="50%">
+      <SplitPane
+        split="vertical"
+        minSize={200}
+        defaultSize="50%"
+        style={{ height: 'calc(100vh - 55px)' }}
+      >
         <Editor
           language={language}
           value={value}
@@ -196,9 +236,7 @@ const EditModal = ({
             editorRef.current = editor;
           }}
         />
-        <div>
-          <pre>{log}</pre>
-        </div>
+        <pre style={{ height: '100%', whiteSpace: 'break-spaces' }}>{log}</pre>
       </SplitPane>
       <SaveModal
         visible={saveModalVisible}
@@ -209,7 +247,7 @@ const EditModal = ({
           content:
             editorRef.current &&
             editorRef.current.getValue().replace(/\r\n/g, '\n'),
-          filename: cNode?.value,
+          filename: cNode?.title,
         }}
       />
       <SettingModal

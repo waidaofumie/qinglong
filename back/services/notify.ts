@@ -16,6 +16,7 @@ export default class NotificationService {
     ['gotify', this.gotify],
     ['goCqHttpBot', this.goCqHttpBot],
     ['serverChan', this.serverChan],
+    ['pushDeer', this.pushDeer],
     ['bark', this.bark],
     ['telegramBot', this.telegramBot],
     ['dingtalkBot', this.dingtalkBot],
@@ -90,14 +91,12 @@ export default class NotificationService {
   private async goCqHttpBot() {
     const { goCqHttpBotQq, goCqHttpBotToken, goCqHttpBotUrl } = this.params;
     const res: any = await got
-      .post(
-        `${goCqHttpBotUrl}?access_token=${goCqHttpBotToken}&${goCqHttpBotQq}`,
-        {
-          timeout: this.timeout,
-          retry: 0,
-          json: { message: `${this.title}\n${this.content}` },
-        },
-      )
+      .post(`${goCqHttpBotUrl}?${goCqHttpBotQq}`, {
+        timeout: this.timeout,
+        retry: 0,
+        json: { message: `${this.title}\n${this.content}` },
+        headers: { Authorization: 'Bearer ' + goCqHttpBotToken },
+      })
       .json();
     return res.retcode === 0;
   }
@@ -118,8 +117,26 @@ export default class NotificationService {
     return res.errno === 0 || res.data.errno === 0;
   }
 
+  private async pushDeer() {
+    const { pushDeerKey } = this.params;
+    const url = `https://api2.pushdeer.com/message/push`;
+    const res: any = await got
+      .post(url, {
+        timeout: this.timeout,
+        retry: 0,
+        body: `pushkey=${pushDeerKey}&text=${encodeURIComponent(
+          this.title,
+        )}&desp=${encodeURIComponent(this.content)}&type=markdown`,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      })
+      .json();
+    return (
+      res.content.result.length !== undefined && res.content.result.length > 0
+    );
+  }
+
   private async bark() {
-    let { barkPush, barkSound, barkGroup } = this.params;
+    let { barkPush, barkIcon, barkSound, barkGroup } = this.params;
     if (!barkPush.startsWith('http') && !barkPush.startsWith('https')) {
       barkPush = `https://api.day.app/${barkPush}`;
     }
@@ -127,7 +144,7 @@ export default class NotificationService {
       this.title,
     )}/${encodeURIComponent(
       this.content,
-    )}?sound=${barkSound}&group=${barkGroup}`;
+    )}?icon=${barkIcon}?sound=${barkSound}&group=${barkGroup}`;
     const res: any = await got
       .get(url, {
         timeout: this.timeout,
